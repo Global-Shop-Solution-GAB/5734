@@ -1,0 +1,106 @@
+Program.Sub.ScreenSU.Start
+Gui.frmConfig..Create
+Gui.frmConfig..Caption("Customer TrueView")
+Gui.frmConfig..Size(10785,6960)
+Gui.frmConfig..MinX(0)
+Gui.frmConfig..MinY(0)
+Gui.frmConfig..Position(0,0)
+Gui.frmConfig..FontName("Arial Black")
+Gui.frmConfig..BackColor(-2147483633)
+Gui.frmConfig..MousePointer(0)
+Gui.frmConfig..Event(UnLoad,frmConfig_UnLoad)
+Gui.frmConfig.gsgcTrueViewCust.Create(GsGridControl)
+Gui.frmConfig.gsgcTrueViewCust.Size(10425,5760)
+Gui.frmConfig.gsgcTrueViewCust.Position(45,90)
+Gui.frmConfig.cmdSave.Create(Button)
+Gui.frmConfig.cmdSave.Size(1260,375)
+Gui.frmConfig.cmdSave.Position(75,5895)
+Gui.frmConfig.cmdSave.Caption("Save")
+Gui.frmConfig.cmdSave.Event(Click,cmdSave_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+	V.Local.sFileLocat.Declare
+	v.Local.bFileCheck.Declare
+	
+	'Config File
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5734_TRUEVIEW_CONFIG.xml",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Data.DataTable.CreateFromXML("dt",v.Local.sFileLocat,true)
+	f.Intrinsic.Control.Else
+		f.Data.DataTable.Create("dt",true)
+		f.Data.DataTable.AddColumn("dt","Customer","String")
+		f.Data.DataTable.AddColumn("dt","BaseUrl","String")
+		f.Data.DataTable.AddColumn("dt","UniqueKey","String")
+		f.Data.DataTable.AddColumn("dt","FullURL","String")
+		f.Data.DataTable.AddColumn("dt","FullURLC","String")
+		f.Data.DataTable.AddColumn("dt","Email","String")
+		f.Data.DataTable.AddRow("dt","Customer","")
+	f.Intrinsic.Control.EndIf
+	
+	'Set Column Properties
+	'Heat Treat Config Grid
+	gui.frmConfig.gsgcTrueViewCust.DataSource("dt")
+	gui.frmConfig.gsgcTrueViewCust.AddGridviewFromDatatable("gv","dt")
+	gui.frmConfig.gsgcTrueViewCust.SetGridviewProperty("gv","AllowAddRows","True")
+	gui.frmConfig.gsgcTrueViewCust.SetGridviewProperty("gv","AllowDeleteRows","True")
+	gui.frmConfig.gsgcTrueViewCust.anchor(15)
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","UniqueKey","ReadOnly","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","UniqueKey","AllowEdit","False")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","Customer","ReadOnly","False")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","Customer","AllowEdit","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","Email","ReadOnly","False")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","Email","AllowEdit","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","BaseUrl","ReadOnly","False")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","BaseUrl","AllowEdit","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURL","ReadOnly","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURL","AllowEdit","False")
+	
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURLC","ReadOnly","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURLC","AllowEdit","True")
+	'Set Caption
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","BaseURL","Caption","Base URL")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURL","Caption","Full URL")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURLC","Caption","Full URL Friendly")
+	
+	'Set colour
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURL","CellForeColor","Blue")
+	
+	'Set Bold
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","Customer","HeaderFontBold","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","UniqueKey","HeaderFontBold","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","BaseURL","HeaderFontBold","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURL","HeaderFontBold","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","FullURLC","HeaderFontBold","True")
+	gui.frmConfig.gsgcTrueViewCust.SetColumnProperty("gv","Email","HeaderFontBold","True")
+	
+	gui.frmConfig.cmdSave.anchor(6)
+	gui.frmConfig..Show
+F.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmConfig_UnLoad)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.cmdSave_Click.Start
+f.Intrinsic.Control.Try
+	v.Local.sFileLocat.Declare(string)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5734_TRUEVIEW_CONFIG.xml",v.Local.sFileLocat)
+	f.Data.DataTable.SaveToXML("dt",0,true,v.Local.sfileLocat)
+	f.Intrinsic.UI.Msgbox("Successfully Updated.")
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmConfig_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.frmConfig_UnLoad.Start
+F.Intrinsic.Control.End
+Program.Sub.frmConfig_UnLoad.End
+
+
