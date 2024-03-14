@@ -1,0 +1,66 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.Try
+	V.Local.sFileLocat.Declare
+	v.Local.sfile.Declare
+	v.Local.sURLFile.Declare
+	v.Local.sKey.Declare
+	v.Local.bFileCheck.Declare
+	v.Local.bFileExists.Declare
+	V.Local.sFullURL.Declare
+	v.Local.i.Declare
+	v.Local.sSenderEmail.Declare
+	v.Local.sSubject.Declare
+	v.Local.sSql.Declare
+	v.Local.sCustName.Declare
+	
+	F.Global.Security.GetUserEmail("SUPERVSR",V.Local.sSenderEmail)
+	f.ODBC.Connection!conx.opencompanyconnection(60)
+	
+	'Config File
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5734_TRUEVIEW_CONFIG.xml",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Data.DataTable.CreateFromXML("dt",v.Local.sFileLocat,true)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.UI.Msgbox("Config File not found, program will now exit.")
+		f.Intrinsic.Control.End
+	f.Intrinsic.Control.EndIf
+	
+	'Delete the file if it exists
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dt.RowCount--,1)
+		f.Intrinsic.Control.If(v.DataTable.dt(v.Local.i).UniqueKey!Fieldvaltrim,<>,"")
+			f.Intrinsic.String.Concat("c:\inetpub\wwwroot\",v.DataTable.dt(v.Local.i).Customer!fieldvaltrim,"_",v.DataTable.dt(v.Local.i).UniqueKey!fieldvaltrim,v.Local.sURLFile)
+			f.Intrinsic.File.Exists(v.Local.sURLFile,v.Local.bFileExists)
+			f.Intrinsic.Control.If(v.Local.bFileExists)
+				f.Intrinsic.File.DeleteFile(v.Local.sURLFile)
+			f.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Next(v.Local.i)
+	
+	'Loop through and set the URL
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dt.RowCount--,1)
+		f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.DataTable.dt(V.Local.i).CUSTOMER!FIELDVALTRIM,"_5734_url_code.txt",v.Local.sfile)
+		f.Communication.HTTP.DownloadFile("https://happyukgo.com/api/random/?n=128",v.Local.sfile)
+		f.Intrinsic.File.File2String(v.Local.sfile,v.Local.sKey)
+		f.Intrinsic.String.Replace(v.Local.sKey,v.Ambient.DblQuote,"",v.Local.sKey)
+		f.Intrinsic.String.Concat(v.DataTable.dt(v.Local.i).BaseUrl!fieldvaltrim,"/",v.DataTable.dt(v.Local.i).Customer!fieldvaltrim,"_",v.Local.sKey,".html",v.Local.sFullURL)
+		F.Data.DataTable.SetValue("dt",V.Local.i,"UniqueKey",v.Local.sKey,"FullURL",v.Local.sFullURL,"FullURLC",v.Local.sFullURL)
+		v.Local.sfile.Set("")
+		f.Intrinsic.String.Build("SELECT NAME_CUSTOMER FROM V_CUSTOMER_MASTER WHERE CUSTOMER='{0}'",V.DataTable.dt(V.Local.i).Customer!fieldvaltrim,v.Local.sSql)
+		f.ODBC.Connection!conx.executeandreturn(v.Local.sSql,v.Local.sCustName)
+		f.Intrinsic.String.Concat("Customer TrueView: ",v.Local.sCustName.Trim,v.Local.sSubject)
+		F.Global.Messaging.QueueMessage(V.Caller.CompanyCode,0,"",V.Local.sSubject,V.Local.sSenderEmail,V.DataTable.dt(v.Local.i).EMAIL!FIELDVALTRIM,v.Local.sFullURL,5,"",False,"","","","","","","","",False)
+	f.Intrinsic.Control.Next(v.Local.i)
+	
+	f.Data.DataTable.SaveToXML("dt",0,false,v.Local.sFileLocat)
+	f.ODBC.Connection!conx.Close
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.End
+f.Intrinsic.Control.EndTry
+
+Program.Sub.Main.End
