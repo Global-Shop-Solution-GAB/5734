@@ -1,0 +1,498 @@
+Program.Sub.ScreenSU.Start
+Gui.frmResched..Create
+Gui.frmResched..Size(15255,9765)
+Gui.frmResched..MinX(0)
+Gui.frmResched..MinY(0)
+Gui.frmResched..Position(0,0)
+Gui.frmResched..BackColor(-2147483633)
+Gui.frmResched..MousePointer(0)
+Gui.frmResched..Event(UnLoad,frmResched_UnLoad)
+Gui.frmResched..Caption("Replace, Update, and Reschedule WO Utility")
+Gui.frmResched.picGSSLogo.Create(PictureBox)
+Gui.frmResched.picGSSLogo.Size(4125,960)
+Gui.frmResched.picGSSLogo.Position(5520,45)
+Gui.frmResched.picGSSLogo.ToolTip("Double-Click for additional functions")
+Gui.frmResched.pbStatus.Create(ProgressBar)
+Gui.frmResched.pbStatus.Visible(False)
+Gui.frmResched.pbStatus.Size(2985,255)
+Gui.frmResched.pbStatus.Position(75,810)
+Gui.frmResched.cmdSched.Create(Button)
+Gui.frmResched.cmdSched.Size(900,450)
+Gui.frmResched.cmdSched.Position(60,8625)
+Gui.frmResched.cmdSched.Caption("Schedule")
+Gui.frmResched.cmdClearSel.Create(Button)
+Gui.frmResched.cmdClearSel.Size(1455,450)
+Gui.frmResched.cmdClearSel.Position(1020,8625)
+Gui.frmResched.cmdClearSel.Caption("Clear Selected")
+Gui.frmResched.cmdClearSel.Visible(False)
+Gui.frmResched.cmdClearScr.Create(Button)
+Gui.frmResched.cmdClearScr.Size(1455,450)
+Gui.frmResched.cmdClearScr.Position(2505,8625)
+Gui.frmResched.cmdClearScr.Caption("Clear Screen")
+Gui.frmResched.cmdClearScr.Visible(False)
+Gui.frmResched.optFwd.Create(Option)
+Gui.frmResched.optFwd.Size(645,195)
+Gui.frmResched.optFwd.Position(855,150)
+Gui.frmResched.optFwd.Caption("Fwd")
+Gui.frmResched.optBwd.Create(Option)
+Gui.frmResched.optBwd.Size(690,195)
+Gui.frmResched.optBwd.Position(120,150)
+Gui.frmResched.optBwd.Caption("Bwd")
+Gui.frmResched.optHere.Create(Option)
+Gui.frmResched.optHere.Size(1125,195)
+Gui.frmResched.optHere.Position(1545,150)
+Gui.frmResched.optHere.Caption("From Here")
+Gui.frmResched.optHere.BackColor(15790320)
+Gui.frmResched.optHere.ForeColor(0)
+Gui.frmResched.GsGCWC.Create(GsGridControl)
+Gui.frmResched.GsGCWC.Size(14970,7470)
+Gui.frmResched.GsGCWC.Position(60,1110)
+Gui.frmResched.lblStatus.Create(Label,"",True,3075,255,0,75,570,True,0,"Arial",8,-2147483633,0)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+	V.Global.sWC.Declare
+	V.Global.sWCList.Declare
+	V.Global.sRouter.Declare
+	V.Global.sNewRouter.Declare
+	V.Global.sNewRouterDesc.Declare
+	V.Global.sPart.Declare
+	V.Global.sLoc.Declare
+	V.Global.sNewPart.Declare
+	V.Global.sNewPartDesc.Declare
+	V.Global.sNewLoc.Declare
+	V.Global.bRefresh.Declare
+	V.Global.bEdit.Declare(Boolean,False)
+	v.Global.bViewWO.Declare
+	V.Global.bLoadData.Declare
+	V.Global.bLongPart.Declare
+	v.Global.bSecs.Declare
+	v.Global.iCnt.Declare
+	v.Global.iSecs.Declare
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare(String)
+v.Local.sFileLocat.Declare
+v.Local.bFileCheck.Declare
+v.Local.i.Declare
+v.Local.sFilePath.Declare
+
+	'Config File
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5734_TRUEVIEW_CONFIG.xml",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Data.DataTable.CreateFromXML("dt",v.Local.sFileLocat,true)
+	f.Intrinsic.Control.Else
+		f.Intrinsic.UI.Msgbox("Config File not found, program will now exit.")
+		f.Intrinsic.Control.End
+	f.Intrinsic.Control.EndIf
+	
+	'Open company connection
+	F.ODBC.Connection!con.opencompanyconnection(60)
+	F.Intrinsic.Control.CallSub(CheckLongPart)
+
+	'Loop through the customers
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dt.RowCount--)
+		f.Intrinsic.String.Concat("c:\Inetpub\wwwroot\",v.DataTable.dt(v.Local.i).Customer!fieldvaltrim,"_",v.DataTable.dt(v.Local.i).UniqueKey!FIELDVALTRIM,".html",v.Local.sFilePath)
+		f.Intrinsic.Control.CallSub(ddlWC_Click,"Customer",v.DataTable.dt(v.Local.i).CUSTOMER!FIELDVALTRIM,"FilePath",v.Local.sFilePath)
+	f.Intrinsic.Control.Next(v.Local.i)
+	
+	f.Intrinsic.Control.CallSub(frmResched_UnLoad)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(frmResched_UnLoad)
+f.Intrinsic.Control.EndTry
+
+Program.Sub.Main.End
+
+Program.Sub.frmResched_UnLoad.Start
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End	
+Program.Sub.frmResched_UnLoad.End
+
+Program.Sub.ddlWC_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sSQL.Declare
+	V.Local.sRet.Declare
+	V.Local.iCnt.Declare
+	V.Local.sJob.Declare
+	V.Local.sSuffix.Declare
+	V.Local.sSeq.Declare
+	V.Local.sPrevSeq.Declare
+	V.Local.fPrevQty.Declare
+	V.Local.sPrevClsd.Declare
+	v.Local.sCodeOper.Declare
+	v.Local.sMinJob.Declare
+	v.Local.sFilter.Declare
+	v.Local.sJobSteps.Declare
+	v.Local.sCMarkFile.Declare
+	v.Local.sMark.Declare
+	v.Local.sSearch.Declare
+	v.Local.sWCCurr.Declare
+	V.Local.sWebPath.Declare
+	v.Local.iMax.Declare
+	v.Local.iHolder.Declare
+	v.Local.sFileExport.Declare
+
+	F.Intrinsic.Control.If(V.DataTable.dtWC.Exists)
+		F.Data.DataTable.Close("dtWC")
+	F.Intrinsic.Control.EndIf
+	V.Global.bLoadData.Set(True)
+	
+	'V.Local.sSQL.Set("SELECT DISTINCT CONVERT(0,SQL_BIT) AS Sel,IF(A.SFX = '',A.JOB,A.JOB + '-' + A.SFX) AS WO,B.PRIORITY AS PRIORITY2, D.CODE_SORT_OPER, '' as 'Ready', A.SEQ, A.Part AS WC,'' AS NewWC,ROG AS DEPT,COALESCE(B.PART,'') AS PART,'' As DISPLAY_PART,B.PART_DESCRIPTION,B.CUSTOMER,E.NAME_CUSTOMER, A.STARTDATE,A.DUEDATE,B.DATE_DUE AS DATE_DUE2,B.SCHEDULED_DUE_DATE AS SCHED_DATE,A.INITSU+A.HOURSORIG AS EST_HRS,HOURSAPPL AS ACT_HRS,IF(A.INITSU+A.HOURSORIG = 0,0,(A.INITSU+A.HOURSORIG)- HOURSAPPL) AS REM_HRS,A.PCSTOPROD AS EST_QTY,A.PCSREMAIN AS REM_QTY,CONVERT(0,SQL_FLOAT) AS PrevQty,A.JOB,A.SFX,B.PRIORITY,B.DATE_START,B.DATE_DUE,'' AS PrevSeq,'' AS PrevClsd FROM APSV3_JBLINES A LEFT JOIN V_JOB_HEADER B ON A.JOB = B.JOB AND A.SFX = B.SUFFIX LEFT JOIN V_JOB_OPERATIONS D ON A.JOB = D.JOB AND A.SFX=D.SUFFIX AND RIGHT(A.JSS,6)=D.SEQ LEFT JOIN V_CUSTOMER_MASTER E ON B.CUSTOMER = E.CUSTOMER LEFT JOIN APSV3_UBDETAIL C ON A.JSS = C.JSS  WHERE A.SEQTYPE = '1' AND COMPLDATE IS NULL AND A.JOBTYPE <> 2 AND B.DATE_CLOSED = '1900-01-01' ORDER BY A.STARTDATE,A.JOB,A.SFX,A.SEQ;")
+	v.Local.sSQL.Set("SELECT CONVERT(0,SQL_BIT) AS Sel,IF(A.SUFFIX = '',A.JOB,A.JOB + '-' + A.SUFFIX) AS WO,B.PRIORITY AS PRIORITY2, A.CODE_SORT_OPER, '' as Dept, '' as 'Ready', A.SEQ, A.Part AS WC,'' AS NewWC, B.PART,'' As DISPLAY_PART,B.PART_DESCRIPTION,B.CUSTOMER,E.NAME_CUSTOMER,B.CUSTOMER_PO, A.DATE_START,A.DATE_DUE,B.DATE_DUE AS DATE_DUE2,B.SCHEDULED_DUE_DATE AS SCHED_DATE,HOURS_ESTIMATED AS EST_HRS,HOURS_ACTUAL AS ACT_HRS,IF(HOURS_ESTIMATED = 0,0,(HOURS_ESTIMATED- HOURS_ACTUAL)) AS REM_HRS,A.UNITS_OPEN AS EST_QTY,A.UNITS_OPEN - A.UNITS_COMPLETE AS REM_QTY,CONVERT(0,SQL_FLOAT) AS PrevQty,A.JOB,A.SUFFIX,B.PRIORITY,B.DATE_START AS 'StartDate',B.DATE_DUE as 'DueDate','' AS PrevSeq,'' AS PrevClsd, A.LMO,  B.QTY_ORDER FROM V_JOB_OPERATIONS A LEFT JOIN V_JOB_HEADER B ON A.JOB = B.JOB AND A.SUFFIX = B.SUFFIX LEFT JOIN V_CUSTOMER_MASTER E ON B.CUSTOMER = E.CUSTOMER WHERE b.customer='{0}' AND B.DATE_CLOSED = '1900-01-01' AND FLAG_CLOSED<>'Y' AND  LMO<>'C' AND SEQ<>'996000' AND SEQ<>'995000' AND SEQ<>'997000' AND SEQ<>'999999' ORDER BY B.SCHEDULED_DUE_DATE,A.JOB,A.SUFFIX,A.SEQ;")
+	f.Intrinsic.String.Build(v.Local.sSQL,v.Args.customer,v.Local.ssql)
+	
+	F.Data.DataTable.CreateFromSQL("dtWC","con",V.Local.sSQL,True)
+
+	f.Intrinsic.Control.If(v.Global.bLongPart)
+		F.Data.DataTable.AddDisplayPartColumn("dtWC",0,"PART","DISPLAY_PART")
+	f.Intrinsic.Control.Else
+		F.Data.DataTable.CopyColumn("dtWC","PART","DISPLAY_PART")
+	f.Intrinsic.Control.EndIf	
+	
+	'RF, JUNE 2019 ADD IN JOB STEPS*******************************************************************
+	F.Data.DataTable.AddColumn("dtWC","JobSteps","String")
+	f.Intrinsic.Control.If(v.DataTable.dtWC.RowCount,>,0)
+		f.Intrinsic.Math.Mult(v.DataTable.dtWC.RowCount,2,v.Local.iMax)
+		gui.frmResched.pbStatus.Max(v.Local.iMax)
+	f.Intrinsic.Control.EndIf
+	'Get the mininum job number
+	f.ODBC.Connection!con.ExecuteAndReturn("Select Min(Job) as JobMin from v_Job_header WHERE DATE_CLOSED = '1900-1-1' ",v.Local.sMinJob)
+	f.Intrinsic.Control.If(v.Local.sMinJob,=,"")
+		v.Local.sMinJob.Set("000000")
+	f.Intrinsic.Control.EndIf
+	
+	'Get all Job Operations where job >= minjob. This is to avoid getting the whole v_job_operations which is too big	
+	f.Intrinsic.String.Build("Select Job, Suffix, Seq, LMO, Description, Part as PartWO, Flag_Closed, Units_Open, Date_Start, Date_Due, PO_Assigned,'' as POHead, Date_PO_Order,Job + '-' + Suffix + '-' + Seq as JobSuffixSeq from V_Job_Operations where Job >= '{0}' and LMO in ('M','L','O') and Seq < '990000' Order by Job,Suffix,Seq",v.Local.sMinJob,v.Local.sSQL)
+	f.Data.DataTable.CreateFromSQL("JobOp","con",v.Local.sSQL,True)	
+
+	'Get Job Steps	
+	f.Data.DataTable.AddExpressionColumn("JobOp","JobSteps","String","IIF(Flag_Closed = 'Y','~' + trim(PartWO),trim(PartWO))")
+	f.Data.DataView.Create("JobOp","dvJobOp")
+	
+	'Loop through values
+	f.Intrinsic.Control.For(v.Local.iCnt,0,v.DataTable.dtWC.RowCount--,1)
+		'JobSteps
+		f.Intrinsic.String.Build("Job = '{0}' and Suffix = '{1}' And (LMO = 'L' or LMO = 'O')",v.DataTable.dtWC(v.Local.iCnt).Job!FieldValString,v.DataTable.dtWC(v.Local.iCnt).SUFFIX!FieldValString,v.Local.sFilter)
+		f.Data.DataView.SetFilter("JobOp","dvJobOp",v.Local.sFilter)
+		f.Data.DataView.SetSort("JobOp","dvJobOp","Job,Suffix,Seq")	
+		f.Data.DataView.ToString("JobOp","dvJobOp","JobSteps",""," / ",v.Local.sJobSteps)
+		f.Intrinsic.String.Concat(v.Caller.GasDir,"\GAB_5734_COMPLETION.txt",v.Local.sCMarkFile)
+		f.Intrinsic.File.File2String(v.Local.sCMarkFile,v.Local.sMark)
+		
+		f.Intrinsic.String.Replace(v.Local.sJobSteps,"~",v.Local.sMark,v.Local.sJobSteps)
+		f.Data.DataTable.SetValue("dtWC",v.Local.iCnt,"JobSteps",v.Local.sJobSteps)
+	f.Intrinsic.Control.Next(v.Local.iCnt)
+	f.Data.DataTable.Close("JobOp")
+	v.local.iHolder.Set(v.Local.iCnt)
+	'*************************************************************************************************
+
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.DataTable.dtWC.RowCount--,1)
+		f.Intrinsic.Math.Add(v.Local.iHolder,1,v.Local.iHolder)
+		gui.frmResched.pbStatus.Value(v.Local.iHolder)
+		V.Local.sJob.Set(V.DataTable.dtWC(V.Local.iCnt).JOB!FieldValTrim)
+		V.Local.sSuffix.Set(V.DataTable.dtWC(V.Local.iCnt).SUFFIX!FieldValTrim)
+		V.Local.sSeq.Set(V.DataTable.dtWC(V.Local.iCnt).SEQ!FieldValTrim)
+		f.Intrinsic.String.LPad(v.Local.sSeq,"0",6,v.Local.sSeq)
+		F.Intrinsic.String.Build("select TOP 1 SEQ from JOB_OPERATIONS WHERE JOB='{0}' AND SUFFIX='{1}' AND FLAG_CLOSED<>'Y' ORDER BY SEQ",V.Local.sJob,V.Local.sSuffix,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sRet)
+		F.Intrinsic.Control.If(V.Local.sRet,=,v.Local.sSeq)
+			F.Data.DataTable.SetValue("dtWC",V.Local.iCnt,"Ready","Y")
+		f.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+
+	f.Data.DataView.Create("dtWC","dvWC")
+	f.Data.DataView.SetFilter("dtWC","dvWC","Ready='Y'")
+	f.Intrinsic.Control.CallSub(loadGVWC)
+
+	Gui.frmResched.GsGCWC.Export(v.Args.filePath,"html")
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.ddlWC_Click.End
+
+Program.Sub.LoadGVWC.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	v.Local.sEmpInitials.Declare
+	v.Local.sEmployees.Declare
+	V.Local.iCnt.Declare
+	v.Local.i.Declare
+	
+	Gui.frmResched.GsGCWC.AddGridViewFromDataView("gvWC","dtWC","dvWC")
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","MultiSelect",False)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","AllowSort",True)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","AllowFilter",True)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","ShowDetailTabs",False)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","ShowGroupPanel",True)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","AllowColumnResizing",True)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","OptionsMenuShowAutoFilterRowItem",False)
+	Gui.frmResched.GsGCWC.SetGridViewProperty("gvWC","OptionsViewColumnAutoWidth",False)
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","JOB","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SUFFIX","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_START","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevSeq","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevClsd","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CUSTOMER_PO","Visible",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_START","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","JOB","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SUFFIX","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","StartDate","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevSeq","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevClsd","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","LMO","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Priority","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Priority2","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Dept","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CODE_SORT_OPER","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Ready","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DueDate","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Name_Customer","Visible",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","part","Visible",False)
+	gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","Visible",False)
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","Fixed","Left")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","Fixed","Left")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","Fixed","Left")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","Fixed","Left")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","Fixed","Left")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","Fixed","Left")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","JobSteps","Fixed","Left")
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","Caption","Select")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","Caption","Work Order")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer","Caption","Customer")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Name_Customer","Caption","Name Customer")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","Caption","Priority ")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","Caption","Seq. ")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","Caption","Sequence WC")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","Caption","New WC")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DEPT","Caption","Dept")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DISPLAY_PART","Caption","Part ")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CODE_SORT_OPER","Caption","Operator ")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PART_DESCRIPTION","Caption","Description")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","Caption","Seq. Start Date")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","Caption","Seq. Due Date")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","Caption","WO Due Date")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","Caption","WO Sched. Due Date")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","Caption","Est. Hrs.")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","Caption","Act. Hrs.")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","Caption","Rem. Hrs.")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","Caption","Est. Qty.")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","Caption","Rem. Qty.")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CUSTOMER_PO","Caption","Customer PO")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","Caption","Prev. Compl. Qty.")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","QTY_ORDER","Caption","WO Qty.")
+	'sched_date = WO Sched. Due Date
+	'DATE_DUE2 = WO DUE DATE
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","MinWidth","10")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","LMO","MinWidth","10")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","MinWidth","85")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CODE_SORT_OPER","MinWidth","100")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","MinWidth","30")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","MinWidth","75")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","MinWidth","75")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","MinWidth","75")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DEPT","MinWidth","60")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DISPLAY_PART","MinWidth","120")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PART_DESCRIPTION","MinWidth","150")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","MinWidth","90")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","MinWidth","90")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","MinWidth","90")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","MinWidth","110")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","MinWidth","80")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","MinWidth","80")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","MinWidth","80")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","MinWidth","80")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","MinWidth","80")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","MinWidth","95")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer","MinWidth","80")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Name_Customer","MinWidth","150")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer_PO","MinWidth","75")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","JobSteps","MinWidth","450")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","QTY_ORDER","MinWidth","80")
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","DisplayCustomNumeric","000000")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","DisplayCustomNumeric","#,###,##0.0000")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","DisplayCustomNumeric","#,###,##0.0000")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","DisplayCustomNumeric","#,###,##0.0000")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","DisplayCustomNumeric","#,###,##0.0000")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","DisplayCustomNumeric","#,###,##0.0000")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","DisplayCustomNumeric","#,###,##0.0000")
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DEPT","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DEPT","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DISPLAY_PART","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DISPLAY_PART","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PART_DESCRIPTION","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PART_DESCRIPTION","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Name_Customer","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Name_Customer","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","JobSteps","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","JobSteps","ReadOnly",True)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","LMO","AllowEdit",False)
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","LMO","ReadOnly",True)
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Sel","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SEQ","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DEPT","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DEPT","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Customer","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","Name_Customer","CellHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","HeaderHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_HRS","CellHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","HeaderHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","ACT_HRS","CellHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","HeaderHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_HRS","CellHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","HeaderHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","EST_QTY","CellHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","HeaderHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","REM_QTY","CellHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","HeaderHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PrevQty","CellHAlignment","Far")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","LMO","HeaderHAlignment","Center")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","LMO","CellHAlignment","Center")
+
+	'Create the employee list
+	f.Intrinsic.Control.If(v.DataTable.dtEmp.Exists)
+		f.Data.DataTable.Close("dtEmp")
+	f.Intrinsic.Control.EndIf
+	f.Data.DataTable.CreateFromSQL("dtEmp","con","SELECT CONCAT(rtrim(EMPL_INITIALS),CONCAT('-',RTRIM(NAME))) AS MYEMPLOYEE FROM V_EMPLOYEE_MSTR WHERE DATE_TERMINATION='1900-01-01'")
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtEmp.RowCount--,1)	
+		F.Intrinsic.String.Concat(v.Local.sEmployees,v.DataTable.dtEmp(v.Local.i).MYEMPLOYEE!FIELDVALTRIM,"*!*",v.Local.semployees)
+	f.Intrinsic.Control.Next(v.Local.i)
+	gui.frmResched.GsGCWC.ColumnEdit("gvWC","CODE_SORT_OPER","Dropdownlist",v.Local.semployees)
+	
+
+'	f.Intrinsic.Control.If(v.Global.bEdit,=,True,or,v.Global.bViewWO,=,True)
+'		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WO","CellForeColor","Blue")
+'	f.Intrinsic.Control.EndIf	
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","WC","CellTrimming","Character")
+
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","STARTDATE","DisplayCustomDatetime","d")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DUEDATE","DisplayCustomDatetime","d")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","DisplayCustomDatetime","d")
+	Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","SCHED_DATE","DisplayCustomDatetime","d")
+	
+	F.Intrinsic.Control.If(V.Global.bLongPart)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DISPLAY_PART","MinWidth","250")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Global.bEdit)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","AllowEdit",True)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","ReadOnly",False)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","AllowEdit",True)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","ReadOnly",False)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CODE_SORT_OPER","AllowEdit",True)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CODE_SORT_OPER","ReadOnly",False)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","AllowEdit",True)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","ReadOnly",False)
+		Gui.frmResched.GsGCWC.ColumnEdit("gvWC","NewWC","Dropdownlist",V.Global.sWCList)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","CellBackColor","LightYellow")
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","CellBackColor","LightYellow")
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","CellBackColor","LightYellow")
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","CODE_SORT_OPER","CellBackColor","LightYellow")
+	F.Intrinsic.Control.Else
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","AllowEdit",False)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","PRIORITY2","ReadOnly",True)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","AllowEdit",False)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","NewWC","ReadOnly",True)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","AllowEdit",False)
+		Gui.frmResched.GsGCWC.SetColumnProperty("gvWC","DATE_DUE2","ReadOnly",True)
+	F.Intrinsic.Control.EndIf
+
+	
+	Gui.frmResched.GsGCWC.AddSummaryItem("gvWC","EST_HRS","SUM_EST_HRS","Sum","","","n")
+	Gui.frmResched.GsGCWC.AddSummaryItem("gvWC","ACT_HRS","SUM_ACT_HRS","Sum","","","n")
+	Gui.frmResched.GsGCWC.AddSummaryItem("gvWC","REM_HRS","SUM_REM_HRS","Sum","","","n")
+
+	Gui.frmResched.GsGCWC.MainView("gvWC")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadGVWC.End
+
+Program.Sub.CheckLongPart.Start
+	F.Global.General.ReadOption("400861",0,False,"0000",V.Global.bLongPart)
+	F.Intrinsic.Control.If(V.Global.bLongPart,=,False)
+		F.Global.General.ReadOption("400861",0,False,"0004",V.Global.bLongPart)
+	F.Intrinsic.Control.EndIf
+Program.Sub.CheckLongPart.End
+
+Program.Sub.Comments.Start
+'SELECT DISTINCT CONVERT(0,SQL_BIT) AS Sel,IF(A.SFX = '',A.JOB,A.JOB + '-' + A.SFX) AS WO,B.PRIORITY AS PRIORITY2,'' as CODE_SORT_OPER, A.SEQ,C.SAR AS WC,'' AS NewWC,ROG AS DEPT,COALESCE(B.PART,'') AS PART,'' As DISPLAY_PART,B.PART_DESCRIPTION,A.STARTDATE,A.DUEDATE,B.DATE_DUE AS DATE_DUE2,B.SCHEDULED_DUE_DATE AS SCHED_DATE,A.INITSU+A.HOURSORIG AS EST_HRS,HOURSAPPL AS ACT_HRS,IF(A.INITSU+A.HOURSORIG = 0,0,(A.INITSU+A.HOURSORIG)- HOURSAPPL) AS REM_HRS,A.PCSTOPROD AS EST_QTY,A.PCSREMAIN AS REM_QTY,CONVERT(0,SQL_FLOAT) AS PrevQty,A.JOB,A.SFX,B.PRIORITY,B.DATE_START,B.DATE_DUE,'' AS PrevSeq,'' AS PrevClsd 
+FROM APSV3_JBLINES A 
+LEFT JOIN V_JOB_HEADER B ON A.JOB = B.JOB AND A.SFX = B.SUFFIX 
+LEFT JOIN V_JOB_OPERATIONS D ON A.JOB = D.JOB AND A.SFX=D.SUFFIX AND A.SEQ=D.SEQ
+LEFT JOIN APSV3_UBDETAIL C ON A.JSS = C.JSS 
+WHERE A.SEQTYPE = '1' AND COMPLDATE IS NULL AND A.JOBTYPE <> 2 AND B.DATE_CLOSED = '1900-01-01' 
+ORDER BY A.STARTDATE,A.JOB,A.SFX,A.SEQ;
+Program.Sub.Comments.End
